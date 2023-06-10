@@ -1,0 +1,13 @@
+version: '3.1'
+
+services:
+  homeassistant:
+    container_name: homeassistant
+    # on 22jan23 : stable on Pi resulted in download of sha256:533318192468a5681be3ea34cbf9c0fdb8d25e9177128ddc0b2062808b8be3ba
+    image: ghcr.io/home-assistant/home-assistant@sha256:533318192468a5681be3ea34cbf9c0fdb8d25e9177128ddc0b2062808b8be3ba
+    volumes:
+      - ./homeassistant/config:/config
+      - /etc/localtime:/etc/localtime:ro
+    #network_mode: host
+    ports:
+      - "8123:8123"
