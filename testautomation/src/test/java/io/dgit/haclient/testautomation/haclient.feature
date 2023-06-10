@@ -1,7 +1,10 @@
 Feature: fetching User Details
 
-  Scenario: testing the get call for User Details
+  Background:
+    * url appURL = 'http://localhost:8080'
 
-    Given url 'https://reqres.in/api/users/2'
+  Scenario: Verify health of app is UP
+
+    Given path '/actuator/health'
     When method GET
     Then status 200
