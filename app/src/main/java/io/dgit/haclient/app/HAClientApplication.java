@@ -1,4 +1,4 @@
-package io.dgit.haclient;
+package io.dgit.haclient.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
