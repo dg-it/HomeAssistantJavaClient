@@ -25,3 +25,5 @@ subprocess.check_call(["docker-compose", "-f", ta_dir + "/docker/docker-compose.
 subprocess.check_call(
     ["java", "-jar", ta_executable_jar_filepath, "--select-class=io.dgit.haclient.testautomation.KarateRunner"],
     cwd=ta_dir)
+
+subprocess.check_call(["docker-compose", "-f", ta_dir + "/docker/docker-compose.yml", "down"], cwd=ta_dir)
