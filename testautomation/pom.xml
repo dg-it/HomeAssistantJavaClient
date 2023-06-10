@@ -14,29 +14,61 @@
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
+    <!-- note: maven scope set to default for Karate and JUnit libraries for packaging as executable jar for automated testing. Test
+        classes in src/test/java to easily trigger junit test in IDEs as well. -->
     <dependencies>
         <dependency>
             <groupId>com.intuit.karate</groupId>
             <artifactId>karate-core</artifactId>
             <version>${karate.version}</version>
             <classifier>all</classifier>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.intuit.karate</groupId>
             <artifactId>karate-junit5</artifactId>
             <version>${karate.version}</version>
-            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-console-standalone</artifactId>
+            <version>1.9.3</version>
         </dependency>
     </dependencies>
     <build>
-        <testResources>
-            <testResource>
+        <sourceDirectory>
+            src/test/java
+        </sourceDirectory>
+        <resources>
+            <resource>
                 <directory>src/test/java</directory>
-                <excludes>
-                    <exclude>**/*.java</exclude>
-                </excludes>
-            </testResource>
-        </testResources>
+                <includes>
+                    <include>**/*.feature</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>org.junit.platform.console.ConsoleLauncher</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>
