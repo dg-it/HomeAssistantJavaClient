@@ -2,10 +2,15 @@ version: '3.1'
 
 services:
   app:
-    image: openjdk:17-jdk-slim
+    image: openjdk:17-jdk
     volumes:
       - ./../../app/target/app-0.0.1-SNAPSHOT.jar:/app.jar
     command: [ 'java', '-jar', '/app.jar' ]
+    healthcheck:
+      test: [ "CMD", "curl", "-fs", "http://localhost:${SERVER_PORT:-8080}/actuator/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
     ports:
       - '8080:8080'
 
