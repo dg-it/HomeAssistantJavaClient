@@ -117,6 +117,17 @@ Feature: HomeAssistantJavaClient health state
     Then status 200
     * print 'HomeAssistant set-up logged in and continued to next onboarding step'
 
+  Scenario: HomeAssistant API should be available (https://developers.home-assistant.io/docs/api/rest/) given access token
+    Given url haURL
+    # not that the trailing slash is material, if absent results in 404
+    # however, karate removes the trailing slash https://github.com/karatelabs/karate/issues/1863
+    # credits to https://github.com/karatelabs/karate/issues/1561#issuecomment-821928620 for workaround
+    And path  'api', ''
+    And header Authorization = 'Bearer ' + access_token
+    And header Content-Type = 'application/json'
+    When method GET
+    Then status 200
+    And match response == {"message":"API running."}
 
   Scenario: Verify health of HomeAssistant instances is available
 
