@@ -3,6 +3,8 @@ Feature: HomeAssistantJavaClient health state
   Background:
     * url appURL = 'http://localhost:8080'
     * url haURL = 'http://localhost:8123'
+    * def setup = callonce read('common-add-admin-user.feature')
+    * def access_token = (setup.access_token)
 
   Scenario: Verify health of app is available
 
@@ -11,48 +13,44 @@ Feature: HomeAssistantJavaClient health state
     When method GET
     Then status 200
 
-  Scenario: Set-up HA: add a user to new HA instance
-    # Note 1: Turned out to not be working to just track the .storage/auth_provider.homeassistant file, so we need another way to
-    #         automatically configure HomeAssistant
-    # Note 2: Captured by inspecting browser in debug mode, as we don't seem to have fully non-interactive scripted set-up possible
-    Given url haURL
-    And path '/api/onboarding/users'
-    And header Content-Type = 'text/plain;charset=UTF-8'
-    And header Referer = 'http://localhost:8123/onboarding.html'
-    And json data = '{"client_id":"http://localhost:8123/","name":"admin","username":"admin","password":"admin","language":"en-US"}'
-    And request data
-    When method POST
-    Then status 200
-    And match response == {"auth_code":"#present"}
-    * def auth_code = response.auth_code
-
-    * print 'With auth_code received upon admin user creation, requesting access token'
-    Given url haURL
-    And path '/auth/token'
-    And multipart field client_id = 'http://localhost:8123/'
-    And multipart field code = auth_code
-    And multipart field grant_type = 'authorization_code'
-    When method POST
-    Then status 200
-    And match response ==
-    """
-    {
-    "access_token": "#present",
-    "token_type": "Bearer",
-    "refresh_token": "#present",
-    "expires_in": 1800,
-    "ha_auth_provider": "homeassistant"
-    }
-    """
-    * def access_token = response.access_token
-    * print 'Obtained access token: ' + access_token
-
-  Scenario: Set-up HomeAssistant - verify that onboarding state is user set-up done, others remaining.
+  Scenario: Set-up HomeAssistant - verify onboarding state, user set-up is done.
     Given url haURL
     And path '/api/onboarding'
     When method GET
     Then status 200
     And match response == '[{"step":"user","done":true},{"step":"core_config","done":false},{"step":"analytics","done":false},{"step":"integration","done":false}]'
+
+  Scenario: Set-up HomeAssistant: configure core config
+    # interestingly, the post does not contain any actual data..
+#     curl 'http://localhost:8123/api/onboarding/core_config' \
+#      -X 'POST' \
+#      -H 'Accept: */*' \
+#      -H 'Accept-Language: en-GB,en;q=0.9' \
+#      -H 'Cache-Control: no-cache' \
+#      -H 'Connection: keep-alive' \
+#      -H 'Content-Length: 0' \
+#      -H 'Origin: http://localhost:8123' \
+#      -H 'Pragma: no-cache' \
+#      -H 'Referer: http://localhost:8123/onboarding.html' \
+#      -H 'Sec-Fetch-Dest: empty' \
+#      -H 'Sec-Fetch-Mode: cors' \
+#      -H 'Sec-Fetch-Site: same-origin' \
+#      -H 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhYzJhODcxNzBlN2Y0YzQ4OTYxOWUwZjcyM2E4ZGY3NSIsImlhdCI6MTY4NjYwMTM3OSwiZXhwIjoxNjg2NjAzMTc5fQ.RPsORU02fMsX0u2g-i8BHcHcA3AomrvyC-vFhc1ped0' \
+#      --compressed
+    Given url haURL
+    And path '/api/onboarding/core_config'
+    And header Authorization = 'Bearer ' + access_token
+    And json data = ''
+    And request data
+    When method POST
+    Then status 200
+
+  Scenario: Set-up HomeAssistant - verify onboarding state, core config set-up is done.
+    Given url haURL
+    And path '/api/onboarding'
+    When method GET
+    Then status 200
+    And match response == '[{"step":"user","done":true},{"step":"core_config","done":true},{"step":"analytics","done":false},{"step":"integration","done":false}]'
 
   Scenario: Set-up HomeAssistant - verify response of auth providers remains the same
     Given url haURL
@@ -118,26 +116,6 @@ Feature: HomeAssistantJavaClient health state
     When method GET
     Then status 200
     * print 'HomeAssistant set-up logged in and continued to next onboarding step'
-
-  Scenario: Set-up HomeAssistant: configure core config
-#     curl 'http://localhost:8123/api/onboarding/core_config' \
-#      -X 'POST' \
-#      -H 'Accept: */*' \
-#      -H 'Accept-Language: en-GB,en;q=0.9' \
-#      -H 'Cache-Control: no-cache' \
-#      -H 'Connection: keep-alive' \
-#      -H 'Content-Length: 0' \
-#      -H 'Origin: http://localhost:8123' \
-#      -H 'Pragma: no-cache' \
-#      -H 'Referer: http://localhost:8123/onboarding.html' \
-#      -H 'Sec-Fetch-Dest: empty' \
-#      -H 'Sec-Fetch-Mode: cors' \
-#      -H 'Sec-Fetch-Site: same-origin' \
-#      -H 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhYzJhODcxNzBlN2Y0YzQ4OTYxOWUwZjcyM2E4ZGY3NSIsImlhdCI6MTY4NjYwMTM3OSwiZXhwIjoxNjg2NjAzMTc5fQ.RPsORU02fMsX0u2g-i8BHcHcA3AomrvyC-vFhc1ped0' \
-#      --compressed
-    Given url haURL
-    And path '/api/onboarding/core_config'
-    When method POST
 
 
   Scenario: Verify health of HomeAssistant instances is available
