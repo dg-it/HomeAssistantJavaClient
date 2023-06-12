@@ -18,7 +18,7 @@ Feature: HomeAssistantJavaClient health state
     And path '/api/onboarding'
     When method GET
     Then status 200
-    And match response == '[{"step":"user","done":true},{"step":"core_config","done":false},{"step":"analytics","done":false},{"step":"integration","done":false}]'
+    And match response == [{"step":"user","done":true},{"step":"core_config","done":false},{"step":"analytics","done":false},{"step":"integration","done":false}]
 
   Scenario: Set-up HomeAssistant: configure core config
     # interestingly, the post does not contain any actual data..
@@ -50,7 +50,7 @@ Feature: HomeAssistantJavaClient health state
     And path '/api/onboarding'
     When method GET
     Then status 200
-    And match response == '[{"step":"user","done":true},{"step":"core_config","done":true},{"step":"analytics","done":false},{"step":"integration","done":false}]'
+    And match response == [{"step":"user","done":true},{"step":"core_config","done":true},{"step":"analytics","done":false},{"step":"integration","done":false}]
 
   Scenario: Set-up HomeAssistant - verify response of auth providers remains the same
     Given url haURL
