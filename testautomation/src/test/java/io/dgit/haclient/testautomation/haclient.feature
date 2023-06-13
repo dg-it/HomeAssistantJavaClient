@@ -1,4 +1,5 @@
-Feature: HomeAssistantJavaClient health state
+# TODO split up in two feature files
+Feature: HomeAssistant instance set-up feature and HAJavaClient feature
 
   Background:
     * url appURL = 'http://localhost:8080'
@@ -7,13 +8,6 @@ Feature: HomeAssistantJavaClient health state
     * def adminUserAccessTokens = callonce read('common-login-access-token.feature')
     * def access_token = (adminUserAccessTokens.access_token)
     * def refresh_token = (adminUserAccessTokens.refresh_token)
-
-  Scenario: Verify health of app is available
-
-    Given url appURL
-    And path '/actuator/health'
-    When method GET
-    Then status 200
 
   Scenario: Set-up HomeAssistant - verify onboarding state, user set-up is done.
     Given url haURL
@@ -132,9 +126,19 @@ Feature: HomeAssistantJavaClient health state
     Then status 200
     And match response == {"message":"API running."}
 
+  # TODO split below to different feature file
+  Scenario: Verify health of app is available
+
+    Given url appURL
+    And header Authorization = call read('basic-auth.js') { username: 'appadmin', password: 'appadmin' }
+    And path '/actuator/health'
+    When method GET
+    Then status 200
+
   Scenario: Verify health of HomeAssistant instances is available
 
-    Given url appUrl
+    Given url appURL
+    And header Authorization = call read('basic-auth.js') { username: 'appadmin', password: 'appadmin' }
     When path '/ha-instances/health'
     When method GET
     Then status 200

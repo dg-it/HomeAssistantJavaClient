@@ -43,6 +43,7 @@
                 <directory>src/test/java</directory>
                 <includes>
                     <include>**/*.feature</include>
+                    <include>**/*.js</include>
                 </includes>
             </resource>
         </resources>
