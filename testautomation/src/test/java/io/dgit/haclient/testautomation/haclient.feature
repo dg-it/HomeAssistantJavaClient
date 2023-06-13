@@ -3,8 +3,10 @@ Feature: HomeAssistantJavaClient health state
   Background:
     * url appURL = 'http://localhost:8080'
     * url haURL = 'http://localhost:8123'
-    * def setup = callonce read('common-add-admin-user.feature')
-    * def access_token = (setup.access_token)
+    * def adminUser = callonce read('common-add-admin-user.feature')
+    * def adminUserAccessTokens = callonce read('common-login-access-token.feature')
+    * def access_token = (adminUserAccessTokens.access_token)
+    * def refresh_token = (adminUserAccessTokens.refresh_token)
 
   Scenario: Verify health of app is available
 
@@ -116,6 +118,7 @@ Feature: HomeAssistantJavaClient health state
     When method GET
     Then status 200
     * print 'HomeAssistant set-up logged in and continued to next onboarding step'
+
 
   Scenario: HomeAssistant API should be available (https://developers.home-assistant.io/docs/api/rest/) given access token
     Given url haURL
