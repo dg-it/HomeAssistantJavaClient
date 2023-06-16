@@ -1,3 +1,8 @@
+app:
+  integration:
+    homeassistant:
+      baseuri: http://localhost:8123
+
 logging:
   level:
     root: INFO

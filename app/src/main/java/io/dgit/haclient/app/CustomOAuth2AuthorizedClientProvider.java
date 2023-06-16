@@ -13,7 +13,6 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
-import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -34,7 +33,7 @@ public class CustomOAuth2AuthorizedClientProvider implements OAuth2AuthorizedCli
     private final Duration clockSkew = Duration.ofSeconds(60);
     private final Clock clock = Clock.systemUTC();
 
-    private OAuth2AccessTokenResponseHttpMessageConverter converter = new OAuth2AccessTokenResponseHttpMessageConverter();
+    private final String baseUri;
 
     @Override
     public OAuth2AuthorizedClient authorize(OAuth2AuthorizationContext context) {
@@ -51,6 +50,7 @@ public class CustomOAuth2AuthorizedClientProvider implements OAuth2AuthorizedCli
         if (authorizedClient != null && !hasTokenExpired(authorizedClient.getAccessToken())) {
             // If client is already authorized but access token is NOT expired than no
             // need for re-authorization
+            log.debug("Client already authorized, no need for re-authorization");
             return null;
         }
 
@@ -66,11 +66,12 @@ public class CustomOAuth2AuthorizedClientProvider implements OAuth2AuthorizedCli
         //        #  2  returns '$result': curl http://localhost:8123/auth/login_flow/$flow_id --data '{"username":"admin","password":"admin","client_id":"http://localhost:8123/"}'
         //        #  3  returns access token: curl -F "code=$result" -F "auth_callback=1" -F "state=eyJoYXNzVXJsIjoiaHR0cDovL2xvY2FsaG9zdDo4MTIzIiwiY2xpZW50SWQiOiJodHRwOi8vbG9jYWxob3N0OjgxMjMvIn0" http://localhost:8123/auth/token -F "grant_type=authorization_code" -F "client_id=http://localhost:8123/" http://localhost:8123/auth/token
         // 1
+        log.debug("Authorizing client with home assistant instance with base uri: [{}]", baseUri);
         var body = """
                     {"client_id":"http://localhost:8123/","handler":["homeassistant",null],"redirect_uri":"http://localhost:8123/onboarding.html?auth_callback=1"}            
                 """;
         var resp1 = WebClient.builder()
-                .baseUrl("http://localhost:8123")
+                .baseUrl(baseUri)
                 .build()
                 .post()
                 .uri("/auth/login_flow")
@@ -95,7 +96,7 @@ public class CustomOAuth2AuthorizedClientProvider implements OAuth2AuthorizedCli
                 {"username":"admin","password":"admin","client_id":"http://localhost:8123/"}
                 """;
         var resp2 = WebClient.builder()
-                .baseUrl("http://localhost:8123")
+                .baseUrl(baseUri)
                 .build()
                 .post()
                 .uri("/auth/login_flow/{flow_id}", flow_id1)
@@ -123,7 +124,7 @@ public class CustomOAuth2AuthorizedClientProvider implements OAuth2AuthorizedCli
         builder.part("client_id", "http://localhost:8123/");
 
         var resp3 = WebClient.builder()
-                .baseUrl("http://localhost:8123")
+                .baseUrl(baseUri)
                 .build()
                 .post()
                 .uri("/auth/token")

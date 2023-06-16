@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,12 +21,16 @@ import java.util.Optional;
 @Slf4j
 public class InstancesHealthController {
 
+    @Value("${app.integration.homeassistant.baseuri}")
+    private String baseUri;
+
     private final WebClient webClient;
 
     private HashMap<String, String> simpleStatusMappings;
 
     @PostConstruct
     public void afterPropertiesSet() {
+        log.debug("Configured with base uri; [{}]", baseUri);
         simpleStatusMappings = new HashMap<>();
         simpleStatusMappings.put("API running.", "UP");
     }
@@ -37,7 +42,9 @@ public class InstancesHealthController {
 
         JsonNode body = webClient
                 .get()
-                .uri(resourceUri)
+                .uri(baseUri, uriBuilder ->
+                    uriBuilder.path("/api/").build()
+                )
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .block();

@@ -1,6 +1,7 @@
 package io.dgit.haclient.app;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.oauth2.client.reactive.ReactiveOAuth2ClientAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration;
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -15,8 +17,8 @@ import org.springframework.security.oauth2.client.*;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.AuthenticatedPrincipalOAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -24,23 +26,33 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Configuration
 @EnableWebSecurity
 @EnableAutoConfiguration(exclude = {OAuth2ClientAutoConfiguration.class, ReactiveOAuth2ClientAutoConfiguration.class})
 @Slf4j
 public class WebSecurityConfig {
 
+    @Value("${app.integration.homeassistant.baseuri}")
+    private String baseUri;
+
     public static final String CUSTOM_HOMEASSISTANT_OAUTH2_CLIENT_REGISTRATION_ID = "homeassistant_custom";
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        return http
+            .sessionManagement(sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .cors(corsConfig -> corsConfig.disable())
+            .csrf(csrfConfig -> csrfConfig.disable())
             .authorizeHttpRequests((authorizeHttpRequests) ->
-                authorizeHttpRequests
-                        .requestMatchers("/**").hasRole("USER")
+                    authorizeHttpRequests
+                            .requestMatchers("/**").hasRole("USER")
             )
-            .httpBasic();
-        return http.build();
+            .httpBasic(withDefaults())
+            .formLogin(formConfig -> formConfig.disable())
+            .logout(logoutConfig -> logoutConfig.disable())
+            .build();
     }
     @Bean
     public UserDetailsService userDetailsService() {
@@ -60,10 +72,9 @@ public class WebSecurityConfig {
                 .filter(oauth2OutboundClient)
                 .build();
     }
-
     @Bean
     public OAuth2AuthorizedClientProvider oAuth2AuthorizedClientProvider() {
-        var delegatingClientProvider = new DelegatingOAuth2AuthorizedClientProvider(new CustomOAuth2AuthorizedClientProvider());
+        var delegatingClientProvider = new DelegatingOAuth2AuthorizedClientProvider(new CustomOAuth2AuthorizedClientProvider(baseUri));
             OAuth2AuthorizedClientProvider authorizedClientProvider =
                     OAuth2AuthorizedClientProviderBuilder.builder()
                             .provider(delegatingClientProvider)
@@ -92,8 +103,8 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    OAuth2AuthorizedClientRepository oAuth2AuthorizedClientRepository() {
-        return new HttpSessionOAuth2AuthorizedClientRepository();
+    OAuth2AuthorizedClientRepository oAuth2AuthorizedClientRepository(OAuth2AuthorizedClientService clientService) {
+        return new AuthenticatedPrincipalOAuth2AuthorizedClientRepository(clientService);
     }
 
     @Bean
