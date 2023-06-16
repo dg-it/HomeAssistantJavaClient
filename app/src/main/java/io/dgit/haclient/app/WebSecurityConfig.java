@@ -2,13 +2,11 @@ package io.dgit.haclient.app;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.oauth2.client.reactive.ReactiveOAuth2ClientAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -30,32 +28,31 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
-@EnableAutoConfiguration(exclude = {OAuth2ClientAutoConfiguration.class, ReactiveOAuth2ClientAutoConfiguration.class})
 @Slf4j
 public class WebSecurityConfig {
 
+    public static final String CUSTOM_HOMEASSISTANT_OAUTH2_CLIENT_REGISTRATION_ID = "homeassistant_custom";
     @Value("${app.integration.homeassistant.baseuri}")
     private String baseUri;
-
-    public static final String CUSTOM_HOMEASSISTANT_OAUTH2_CLIENT_REGISTRATION_ID = "homeassistant_custom";
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
             .sessionManagement(sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .cors(corsConfig -> corsConfig.disable())
-            .csrf(csrfConfig -> csrfConfig.disable())
+            .cors(AbstractHttpConfigurer::disable)
+            .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests((authorizeHttpRequests) ->
                     authorizeHttpRequests
                             .requestMatchers("/**").hasRole("USER")
             )
             .httpBasic(withDefaults())
-            .formLogin(formConfig -> formConfig.disable())
-            .logout(logoutConfig -> logoutConfig.disable())
+            .formLogin(AbstractHttpConfigurer::disable)
+            .logout(AbstractHttpConfigurer::disable)
             .build();
     }
     @Bean
     public UserDetailsService userDetailsService() {
+        //noinspection deprecation, note: not save for production
         UserDetails user = User.withDefaultPasswordEncoder()
                 .username("appadmin").password("appadmin").roles("USER")
                 .build();
@@ -67,7 +64,7 @@ public class WebSecurityConfig {
         var oauth2OutboundClient = new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
         oauth2OutboundClient.setDefaultClientRegistrationId(CUSTOM_HOMEASSISTANT_OAUTH2_CLIENT_REGISTRATION_ID);
 
-        // wires oauth2OutboundClient filter with a WebClient for outbound web requests
+        // wire the oauth2OutboundClient filter with a WebClient for outbound web requests
         return WebClient.builder()
                 .filter(oauth2OutboundClient)
                 .build();
@@ -75,12 +72,10 @@ public class WebSecurityConfig {
     @Bean
     public OAuth2AuthorizedClientProvider oAuth2AuthorizedClientProvider() {
         var delegatingClientProvider = new DelegatingOAuth2AuthorizedClientProvider(new CustomOAuth2AuthorizedClientProvider(baseUri));
-            OAuth2AuthorizedClientProvider authorizedClientProvider =
-                    OAuth2AuthorizedClientProviderBuilder.builder()
-                            .provider(delegatingClientProvider)
-                            .refreshToken()
-                            .build();
-        return authorizedClientProvider;
+        return OAuth2AuthorizedClientProviderBuilder.builder()
+                .provider(delegatingClientProvider)
+                .refreshToken()
+                .build();
     }
 
     @Bean
@@ -93,6 +88,7 @@ public class WebSecurityConfig {
 
     @Bean
     ClientRegistrationRepository clientRegistrationRepository() {
+        //noinspection deprecation, grant type is required, but we use a custom means to obtain access code anyway
         ClientRegistration customClientRegistration = ClientRegistration
                 .withRegistrationId(CUSTOM_HOMEASSISTANT_OAUTH2_CLIENT_REGISTRATION_ID)
                 .clientId(CUSTOM_HOMEASSISTANT_OAUTH2_CLIENT_REGISTRATION_ID)
