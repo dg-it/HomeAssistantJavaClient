@@ -71,7 +71,7 @@ public class WebSecurityConfig {
     }
     @Bean
     public OAuth2AuthorizedClientProvider oAuth2AuthorizedClientProvider() {
-        var delegatingClientProvider = new DelegatingOAuth2AuthorizedClientProvider(new CustomOAuth2AuthorizedClientProvider(baseUri));
+        var delegatingClientProvider = new DelegatingOAuth2AuthorizedClientProvider(new HomeAssistantOAuth2AuthorizedClientProvider(baseUri));
         return OAuth2AuthorizedClientProviderBuilder.builder()
                 .provider(delegatingClientProvider)
                 .refreshToken()
