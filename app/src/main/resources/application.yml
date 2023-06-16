@@ -1,0 +1,11 @@
+app:
+  integration:
+    homeassistant:
+      baseuri: http://localhost:8123
+
+logging:
+  level:
+    root: INFO
+    io.dgit: DEBUG
+    org.springframework: INFO
+    org.springframework.web.client.RestTemplate: INFO

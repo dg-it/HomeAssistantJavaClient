@@ -2,6 +2,9 @@
 
 Java library to integrate with Home Assistant.
 
+Leverages Spring Security OAuth2 client features and includes a custom OAuth2 Client Authorization Provider to authenticate/authorize
+this app with a HomeAssistant instance.
+
 ## Build
 
 Build all and execute test automation in one go:
@@ -18,6 +21,13 @@ requires (version):
 - Docker Compose (v2.12.2)
 
 Works with versions mentioned, YMMV with other versions. 
+
+This executes
+- building the javaclient app
+- building the testautomation
+- building and starting of docker containers: a fresh homeassistant docker container, and the javaclient app
+- the testautomation against the app backed by the homeassistant docker container
+Please note that for repeated execution, the folder ./testautomation/docker/homeassistant/config is removed.
 
 ## Target use case of this Java client
 Ease separation of concern: separate the concern of local set-up of a HomeAssistant instance (e.g. in a particular holiday home) and the concern of managing multiple HomeAssistant instances (e.g. of all holiday homes in a particular holiday home park). 

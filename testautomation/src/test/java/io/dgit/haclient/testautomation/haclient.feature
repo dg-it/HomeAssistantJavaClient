@@ -142,3 +142,6 @@ Feature: HomeAssistant instance set-up feature and HAJavaClient feature
     When path '/ha-instances/health'
     When method GET
     Then status 200
+    And match response == {"status":"UP"}
+    # verify no unintentional session set-up takes place.
+    And match responseHeaders['JSESSIONID'] == '#notpresent'
