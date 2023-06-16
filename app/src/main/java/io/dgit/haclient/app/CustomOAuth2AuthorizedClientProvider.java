@@ -22,7 +22,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Map;
 
-import static io.dgit.haclient.app.WebSecurityConfig.HOMEASSISTANT_CUSTOM_CLIENT_REGISTRATION_ID;
+import static io.dgit.haclient.app.WebSecurityConfig.CUSTOM_HOMEASSISTANT_OAUTH2_CLIENT_REGISTRATION_ID;
 
 /**
  * Custom implementation for establishing an authorized client similarly as the {@link org.springframework.security.oauth2.client.ClientCredentialsReactiveOAuth2AuthorizedClientProvider}
@@ -41,7 +41,7 @@ public class CustomOAuth2AuthorizedClientProvider implements OAuth2AuthorizedCli
 
         ClientRegistration clientRegistration = context.getClientRegistration();
         String clientId = clientRegistration.getClientId();
-        if (!HOMEASSISTANT_CUSTOM_CLIENT_REGISTRATION_ID.equals(clientId)) {
+        if (!CUSTOM_HOMEASSISTANT_OAUTH2_CLIENT_REGISTRATION_ID.equals(clientId)) {
             log.debug("Aborting authorization of OAuth2AuthorizedClient for registration id: [{}]", clientId);
             return null;
         }
