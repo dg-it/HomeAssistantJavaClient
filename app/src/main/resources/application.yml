@@ -1,5 +1,6 @@
 logging:
   level:
     root: INFO
-    org.springframework: TRACE
-    org.springframework.web.client.RestTemplate: DEBUG
+    io.dgit: DEBUG
+    org.springframework: INFO
+    org.springframework.web.client.RestTemplate: INFO
